@@ -1,9 +1,10 @@
 const express = require('express');
+const cors = require('cors')
 const userRoutes = require('./routes/userRoutes');
 const AppError = require('./utilits/appError');
 const globalErrorHandler = require('./controllers/errorController')
 const app = express();
-
+app.use(cors());
 app.use(express.json());
 
 
