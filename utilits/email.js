@@ -9,7 +9,7 @@ const sendEmail = async options =>{
          }
     })
     const mailOptions={
-        from :'labeeb2385@gmail.com',
+        from :process.env.EMAIL.USERNAME,
         to: options.email,
         subject : options.subject,
         text : options.text
