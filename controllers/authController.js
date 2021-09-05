@@ -4,14 +4,15 @@ const User = require('./../models/userModel');
 const catchAsync = require('../utilits/catchAsync');
 const AppError = require('./../utilits/appError');
 const sendEmail = require('./../utilits/email');
-
+const passport = require('passport');
+const {promisify} = require('util');
 
 const signToken = id =>{
     return jwt.sign({id},process.env.JWT_SECRET,{
         expiresIn:process.env.JWT_EXPIRES_IN
     })
 }
-const creatSendToken =(res,user,status) =>{
+const createSendToken =(res,user,status) =>{
     const token = signToken(user._id)
 
     const cookieOptions = {
@@ -23,7 +24,7 @@ const creatSendToken =(res,user,status) =>{
       if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
    
 
-    res.cookie('jwt',token, cookieOptions);
+  
     res.status(status).json({
         status:'success',
         jwt:token,
@@ -33,16 +34,40 @@ const creatSendToken =(res,user,status) =>{
     })
 }
 
+exports.protect = catchAsync(async(req,res,next)=>{ // protect() middleware function for protecting routes by giving access to route for loggedIn users only
+    let token;
+    if(
+        req.headers.authorization &&
+        req.headers.authorization.startsWith('Bearer')
+      ){
+        token = req.headers.authorization.split(' ')[1];
+      } 
+      console.log(token);
+    const decoded = await promisify(jwt.verify)(token,process.env.JWT_SECRET);// catchAsync will auto send err to global error handler if accurs like expired or invalid JWT errrs
+    
+    const currentUser = await User.findById(decoded.id);
+
+    if(!currentUser){
+    return next(new AppError('The user of token not longer exist',401))
+    }
+    // if(currentUser.changePasswordAfter(decoded.iat)){
+    //     return next(new AppError('The user of token not longer exist',401))
+    // }
+    req.user = currentUser; // must place current user in req.user so routes after that middleware can acces to currently loggedin user by req.user 
+    next();// must place next() at the end bcz this is a middleare so the next comming route or middleware can run
+});
+
 exports.signup = catchAsync(async(req,res,next)=>{
     
     const user = await User.create({
         name : req.body.name,
         email : req.body.email,
         password : req.body.password,
-        confirmPassword : req.body.confirmPassword
+        confirmPassword : req.body.confirmPassword,
+        role:req.body.role
     });
     
-    creatSendToken(res,user,201);
+    createSendToken(res,user,201);
   
 });
 
@@ -58,7 +83,7 @@ exports.signin = catchAsync(async(req,res,next)=>{
         return next(new AppError('Incorrect Password or Email', 401))
         
     }
-    creatSendToken(res,user,200);
+    createSendToken(res,user,200);
 });
 
 exports.forgetPassword = catchAsync(async(req,res,next)=>{
@@ -91,3 +116,19 @@ exports.forgetPassword = catchAsync(async(req,res,next)=>{
         return next(new AppError('There was an error while sending email. Try again later' , 500))
     }
 });
+exports.signout = catchAsync(async(req,res,next)=>{
+    
+    
+    try{
+        
+        console.log('successfully loged out')
+        res.status(200).json({
+            status:'success',
+            message:'successfully loged oput'
+        })
+    }catch(err){
+    console.log(err)
+    }
+   
+})
+

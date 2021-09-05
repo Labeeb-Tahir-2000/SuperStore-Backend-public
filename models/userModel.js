@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema({
             max:12,
             required:[true,"Please enter password"]
         },
-        confirmPassword:{
+    confirmPassword:{
             type:String,
     
             validate:{
@@ -30,10 +30,10 @@ const userSchema = new mongoose.Schema({
                 message:'Passwords are not same'
             }
         },
-        role:{
+    role:{
             type:String,
             default:'user',
-            enum:['user','role']
+            enum:['user','admin']
         },
         passwordResetToken: String,
         passwordResetExpires: Date
