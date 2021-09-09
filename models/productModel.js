@@ -25,7 +25,7 @@ const productSchema = new mongoose.Schema({
         },
     pImagePath:{
             type:String,
-            
+            required:[true,"Please Upload image"]    
         },
     pStock:{
         type:Number,

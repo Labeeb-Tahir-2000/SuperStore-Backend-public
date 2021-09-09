@@ -9,6 +9,7 @@ handleJWTExpireError=()=>{ // making instance of Error class with better error m
 }
 
 sendDevError =(err,res)=>{
+    console.log(err.status, err.statusCode ," ",err.message);
     res.status(err.statusCode).json({
         status:err.status,
          message:err.message,
@@ -16,6 +17,7 @@ sendDevError =(err,res)=>{
     })
 }
 sendProError=(err,res)=>{
+    console.log(err.status, err.statusCode ," ",err.message);
     if(err.isOperational){//validation or other errors except programming errors e.g server error,validation, connection etc so send less info to user
         res.status(err.statusCode).json({
             status:err.status,
@@ -38,15 +40,15 @@ module.exports = (err,req,res,next) =>{
     err.message = err.message;
     err.status = err.status  || 'error';
     err.statusCode = err.statusCode || 500;
-    console.log(err.status, err.statusCode ," ",err.message);
 
-    const error = {...err}; // hard copying of err object
-
-    if(process.env.NODE_ENVOIRMENT === 'development'){
-        sendDevError(error,res);
+    if(process.env.NODE_ENV === 'development'){
+        sendDevError(err,res);
     }
 
-    if(process.env.NODE_ENVOIRMENT === 'production'){
+    if(process.env.NODE_ENV === 'production'){
+        let error = { ...err }; // hard copying of err object
+        
+    console.log(error.errors.name)
         if(error.name === 'JsonWebTokenError') error = handleJWTError(error); //caling function that will return instance of Error class
         if(error.name === 'TokenExpiredError') error = handleJWTExpireError(error);
         sendproError(error,res);
