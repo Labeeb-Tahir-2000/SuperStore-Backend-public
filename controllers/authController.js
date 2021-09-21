@@ -64,7 +64,7 @@ exports.signup = catchAsync(async(req,res,next)=>{
         email : req.body.email,
         password : req.body.password,
         confirmPassword : req.body.confirmPassword,
-        role:req.body.role
+        
     });
     
     createSendToken(res,user,201);
@@ -84,6 +84,7 @@ exports.signin = catchAsync(async(req,res,next)=>{
         
     }
     createSendToken(res,user,200);
+    
 });
 
 exports.forgetPassword = catchAsync(async(req,res,next)=>{
@@ -131,4 +132,41 @@ exports.signout = catchAsync(async(req,res,next)=>{
     }
    
 })
+
+exports.setAddress = catchAsync(async(req,res,next)=>{
+    let Address = {
+        name :req.body.name,
+        contact :req.body.contact,
+        address:req.body.address,
+        cityName :req.body.cityName,
+        provinceName :req.body.provinceName,
+    };
+
+    if(!Address){
+        return new AppError('please fill address books',400)
+    }
+    console.log(Address )
+    const user = await User.findByIdAndUpdate(req.user, {address:Address} ,  {useFindAndModify: false });
+    if(!user){
+        return new AppError('cannot add user address',500)
+    }
+    res.status(201).json({
+        status:'success',
+        user
+    })
+});
+
+exports.getUser = catchAsync(async(req,res,next)=>{
+   
+  
+    const user = await User.findById(req.user);
+    if(!user){
+        return new AppError('user didnot exist anymore',500)
+    }
+    res.status(201).json({
+        status:'success',
+        user
+    })
+})
+
 

@@ -3,6 +3,7 @@ const catchAsync = require('../utilits/catchAsync');
 const AppError = require('./../utilits/appError');
 
 sendResponce = (res, product , statusCode)=>{
+    console.log(product)
 res.status(statusCode).json({
     status:'success',
     product 
@@ -24,7 +25,7 @@ exports.addProduct = catchAsync(async(req,res,next)=>{
         pEdible: pEdible,
         pOnSale :pOnSale
     });
-    
+      console.log(product)
     sendResponce(res,product, 201);
 })
 exports.showProducts = catchAsync(async(req,res,next)=>{
@@ -34,7 +35,7 @@ exports.showProducts = catchAsync(async(req,res,next)=>{
         return (new AppError('can not get the products ' , 500))
     }
 
-     
+   
     sendResponce(res,products,200)
 });
 
@@ -58,12 +59,52 @@ exports.editProducts = catchAsync(async(req,res,next)=>{
 
     exports.getProducts = catchAsync(async(req,res,next)=>{
         const products = await Product.find()
+        console.log(products)
         sendResponce(res,products,200)
     });
     exports.getSaleProducts = catchAsync(async(req,res,next)=>{
         const products = await Product.find({pOnSale : 'onSale'})
+        if(!products){
+            return (new AppError('no product on sale ' , 204))
+        }
         sendResponce(res,products,200)
     })
      
+    exports.getCetegoryProducts = catchAsync(async(req,res,next)=>{
+      
+    
+        const [cetegory1 , cetegory2] = req.body.cetegory.split(',');
+        console.log(cetegory1 , cetegory2)
+        const cetegory =[
+            cetegory1,
+            cetegory2
+        ]
+        console.log(cetegory)
+        if (!cetegory){
+            return new AppError('please select cetegory', 400)
+        }
+        const products = await Product.find().where('pCetegory').in(cetegory)
+        
+        console.log(products)
+        if (!products){
+            return new AppError(`no product for ${cetegory} cetegory`, 204)
+            
+        }
+        sendResponce(res,products,200)
+    })
+    exports.getCartProducts = catchAsync(async(req,res,next)=>{
+      
+        if (!req.body.id){
+            return new AppError('please select cetegory', 400)
+        }
+        const products = await Product.find().where('_id').in(req.body.id)
+        
+        console.log(products)
+        if (!products){
+            return new AppError(`no product found of given id`, 204)
+            
+        }
+        sendResponce(res,products,200)
+    })
    
 
