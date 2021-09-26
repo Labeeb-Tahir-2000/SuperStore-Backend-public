@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
+const Product = require('./productModel')
 const userSchema = new mongoose.Schema({
     name:{
         type:String,
@@ -43,6 +44,13 @@ const userSchema = new mongoose.Schema({
         provinceName:{ type:String},
 
     },
+    orderedProducts:[
+        {
+            type:mongoose.Schema.ObjectId,
+            ref:'Product'
+
+        }
+    ],
         passwordResetToken: String,
         passwordResetExpires: Date
 

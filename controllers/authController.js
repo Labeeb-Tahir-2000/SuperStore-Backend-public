@@ -159,7 +159,10 @@ exports.setAddress = catchAsync(async(req,res,next)=>{
 exports.getUser = catchAsync(async(req,res,next)=>{
    
   
-    const user = await User.findById(req.user);
+    const user = await User.findById(req.user).populate({
+        path:'orderedProducts',
+        select:'-__v -password -confirmPassword  -passwordResetToken -passwordResetExpires'
+});
     if(!user){
         return new AppError('user didnot exist anymore',500)
     }
@@ -168,5 +171,74 @@ exports.getUser = catchAsync(async(req,res,next)=>{
         user
     })
 })
+
+exports.setUserOrder = catchAsync(async(req,res,next)=>{
+
+   let productIDs= [...req.body.products]
+  console.log(productIDs)
+    const userData = await User.findById(req.user)
+    
+    const userOlderOrders = [...userData.orderedProducts]
+    console.log(userOlderOrders)
+   
+    for(let i= 0 ; i < userOlderOrders.length ; i++){
+        productIDs.push(userOlderOrders[i]);
+    
+    }
+    console.log(productIDs)
+    const user = await User.findByIdAndUpdate(req.user, {orderedProducts: productIDs} ,  {useFindAndModify: false });
+    if(!user){
+        return new AppError('user didnot exist anymore',500)
+    }
+    res.status(201).json({
+        status:'success',
+        user
+    })
+})
+
+exports.allOrders = catchAsync(async(req,res,next)=>{
+    const userID = req.body.ID;
+ 
+    let users;
+    if(userID === undefined || userID === "" || userID === " "){
+        users = await User.find().populate({
+            path:'orderedProducts',
+            select:'-__v -password -confirmPassword  -passwordResetToken -passwordResetExpires'
+        })}else if( userID !== undefined && userID !== "" && userID !== " "){
+            users = await User.find( {_id:userID} ).populate({
+                path:'orderedProducts',
+                select:'-__v -password -confirmPassword  -passwordResetToken -passwordResetExpires'
+        })
+    
+     
+     }
+  console.log(users)
+     if(!users){
+         return new AppError('cannot get any order',204)
+     }
+     res.status(201).json({
+         status:'success',
+         users
+     })
+ })
+ 
+exports.updateOrdersList = catchAsync(async(req,res,next)=>{
+
+
+    let productIDs= [...req.body.productList]
+   console.log(productIDs)
+
+     const user = await User.findByIdAndUpdate(req.body.userID, {orderedProducts: productIDs} ,  {useFindAndModify: false }).populate({
+        path:'orderedProducts',
+        select:'-__v -password -confirmPassword  -passwordResetToken -passwordResetExpires'
+});
+     if(!user){
+         return new AppError('user didnot exist anymore',500)
+     }
+     res.status(201).json({
+         status:'success',
+         user
+     })
+ })
 
 
