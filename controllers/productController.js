@@ -11,7 +11,12 @@ res.status(statusCode).json({
 }
 
 exports.addProduct = catchAsync(async(req,res,next)=>{
-    const {pTitle , pCetegory, pPrice, pImagePath, pDescription, pStock, pEdible , pOnSale} = req.body;
+    console.log(req.body)
+    let {pTitle , pCetegory, pPrice, pImagePath, pDescription, pStock, pEdible , pOnSale, pOldPrice} = req.body;
+    if(pOldPrice === '' || pOldPrice === null ){
+        pOldPrice = ' '
+    }
+    console.log(pOldPrice)
     if(!pTitle || !pCetegory || !pPrice || !pImagePath || !pStock ){
         return next(new AppError('please fill all required fields' , 400))
     }
@@ -23,7 +28,8 @@ exports.addProduct = catchAsync(async(req,res,next)=>{
         pDescription :pDescription,
         pStock :pStock,
         pEdible: pEdible,
-        pOnSale :pOnSale
+        pOnSale :pOnSale,
+        pOldPrice:pOldPrice
     });
       console.log(product)
     sendResponce(res,product, 201);
@@ -41,7 +47,9 @@ exports.showProducts = catchAsync(async(req,res,next)=>{
 
 exports.editProducts = catchAsync(async(req,res,next)=>{
     const requestBody ={...req.body} // hard copy of req.body
-    console.log(requestBody);
+    if(requestBody.pOldPrice === ''){
+        requestBody.pOldPrice = ' '
+    }
     const keys = Object.keys(requestBody) // getting out all property names as keys  of object request object
     // We already filtered out those properties from object to be send here from front End that have empty data "" 
     keys.forEach((key,index)=>{ // looping out object by its property keys

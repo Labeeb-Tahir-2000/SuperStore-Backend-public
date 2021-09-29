@@ -205,13 +205,18 @@ exports.allOrders = catchAsync(async(req,res,next)=>{
             path:'orderedProducts',
             select:'-__v -password -confirmPassword  -passwordResetToken -passwordResetExpires'
         })}else if( userID !== undefined && userID !== "" && userID !== " "){
+            if(userID === 'LoggedInUser'){
+                users = await User.find( {_id:req.user} ).populate({
+                    path:'orderedProducts',
+                    select:'-__v -password -confirmPassword  -passwordResetToken -passwordResetExpires'
+            })
+            }else{
             users = await User.find( {_id:userID} ).populate({
                 path:'orderedProducts',
                 select:'-__v -password -confirmPassword  -passwordResetToken -passwordResetExpires'
-        })
-    
-     
-     }
+                 })
+            }
+       }
   console.log(users)
      if(!users){
          return new AppError('cannot get any order',204)

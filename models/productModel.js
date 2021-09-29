@@ -19,6 +19,9 @@ const productSchema = new mongoose.Schema({
             type:Number,
             required:[true,"Please enter price"]
         },
+    pOldPrice:{
+        type:Number,
+    },
     pCetegory:{
             type:String,
             required:[true,"Please select cetegory"]       
