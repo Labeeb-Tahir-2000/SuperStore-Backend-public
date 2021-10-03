@@ -6,6 +6,8 @@ const AppError = require('./../utilits/appError');
 const sendEmail = require('./../utilits/email');
 const passport = require('passport');
 const {promisify} = require('util');
+const nodemailer = require('nodemailer')
+const nodemailMailgun = require('nodemailer-mailgun-transport')
 
 const signToken = id =>{
     return jwt.sign({id},process.env.JWT_SECRET,{
@@ -89,27 +91,44 @@ exports.signin = catchAsync(async(req,res,next)=>{
 
 exports.forgetPassword = catchAsync(async(req,res,next)=>{
     const{email}= req.body;
-    if(!email)return next(new AppError('Please enter email',400))
+    if(!email)return next(new AppError('Please enter email Address',400))
     const user = await User.findOne({email:email});
-    if(!user) return next(new AppError(`THere is no user with ${email} email`, 401));
+    if(!user) return next(new AppError(`There is no user with ${email} email.. Please provide valid Email Addrees`, 401));
 
-    const resetToken = user.createPasswordResetToken();
+    const resetToken =await  user.createPasswordResetToken();
     await user.save({validateBeforSave : false});// preventing every kind of validation and mongoose middleware to run for this doc save().
     
-    const resetURL = `${req.protocol}://${req.get('host')}/api/v1/resetPassword/${resetToken}`;
-    const message=`Forget your Password?. If yes! Submit PATCH request with the new password and password confirm to :${resetURL}. \n
-    If you did not forget passwordignore this mail`;
-  
+    const resetURL = ` http://localhost:3001/ChangePassword/${resetToken}`;
+    const message=`Forget your Password? If yes! Then click on the given Link and set up your new password: ${resetURL}. \n
+    If you did not forget password, Please ignore this Email`;
+
     try{
-        await sendEmail ({
-            email :user.email,
+        const auth={
+            auth:{
+                api_key:'d600d5370693176d01c5ef38beb24388-dbdfb8ff-cafb69aa',
+                domain:'sandbox8975ac6953844e2f940695f6010e1a76.mailgun.org'
+            }
+        }
+        let transporter= nodemailer.createTransport(nodemailMailgun(auth));
+        const mailOptions={
+            from:'onlinegrocerymart.store@gmail.com',
+            to:user.email,
             subject:'Your password reset token "only valid for 10 minutes"',
-            message :message
-        });
-        res.status(200).json({
-            status:'success',
-            message:'token send to given email'
-        })
+            text :message
+            
+        }
+       transporter.sendMail(mailOptions , function(err ,data){
+                if(err){
+                    console.log(err)
+                }else{
+                    console.log(data)
+                    res.status(200).json({
+                        status:'success',
+                        message:'password reset instructions send to given email, Please go and check Email on urgent basis!'
+                    }) 
+                }         
+                
+         }) 
     }catch (err){
         user.passwordResetToken = undefined;
         user.passwordResetExpires = undefined ;
@@ -198,7 +217,8 @@ exports.setUserOrder = catchAsync(async(req,res,next)=>{
 
 exports.allOrders = catchAsync(async(req,res,next)=>{
     const userID = req.body.ID;
- 
+    const currentUser = req.user;
+    console.log('this is current user',currentUser)
     let users;
     if(userID === undefined || userID === "" || userID === " "){
         users = await User.find().populate({
@@ -206,7 +226,7 @@ exports.allOrders = catchAsync(async(req,res,next)=>{
             select:'-__v -password -confirmPassword  -passwordResetToken -passwordResetExpires'
         })}else if( userID !== undefined && userID !== "" && userID !== " "){
             if(userID === 'LoggedInUser'){
-                users = await User.find( {_id:req.user} ).populate({
+                users = await User.find( {_id: currentUser._id} ).populate({
                     path:'orderedProducts',
                     select:'-__v -password -confirmPassword  -passwordResetToken -passwordResetExpires'
             })
@@ -223,7 +243,9 @@ exports.allOrders = catchAsync(async(req,res,next)=>{
      }
      res.status(201).json({
          status:'success',
+         currentUser,
          users
+        
      })
  })
  

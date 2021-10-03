@@ -37,7 +37,20 @@ const productSchema = new mongoose.Schema({
     pOnSale:{
         type:String,
     }
-    });
+    },{ timestamps: true });
+
+    productSchema.index({
+        pTitle:1, pPrice:1 , pCetegory: 1 , pOnSale:1
+    })
+    // Text index
+    productSchema.index({ 
+        pTitle:'text',
+      
+    }, {
+        weights: {
+            pTitle: 10,      
+        }
+    })
     
     const Product = mongoose.model('Product',productSchema);
     module.exports = Product;

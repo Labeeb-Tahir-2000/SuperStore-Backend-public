@@ -3,7 +3,7 @@ const catchAsync = require('../utilits/catchAsync');
 const AppError = require('./../utilits/appError');
 
 sendResponce = (res, product , statusCode)=>{
-    console.log(product)
+ 
 res.status(statusCode).json({
     status:'success',
     product 
@@ -11,12 +11,12 @@ res.status(statusCode).json({
 }
 
 exports.addProduct = catchAsync(async(req,res,next)=>{
-    console.log(req.body)
+
     let {pTitle , pCetegory, pPrice, pImagePath, pDescription, pStock, pEdible , pOnSale, pOldPrice} = req.body;
     if(pOldPrice === '' || pOldPrice === null ){
         pOldPrice = ' '
     }
-    console.log(pOldPrice)
+
     if(!pTitle || !pCetegory || !pPrice || !pImagePath || !pStock ){
         return next(new AppError('please fill all required fields' , 400))
     }
@@ -31,11 +31,11 @@ exports.addProduct = catchAsync(async(req,res,next)=>{
         pOnSale :pOnSale,
         pOldPrice:pOldPrice
     });
-      console.log(product)
+ 
     sendResponce(res,product, 201);
 })
 exports.showProducts = catchAsync(async(req,res,next)=>{
-    console.log(req.body)
+
     let products = await Product.find(req.body).sort([['pTitle',1]]);
     if(!products){
         return (new AppError('can not get the products ' , 500))
@@ -57,7 +57,7 @@ exports.editProducts = catchAsync(async(req,res,next)=>{
            delete requestBody[key]; // deleting property as well as its value which should be either null  or 'withoutSpace' means data that is empty
         } // 'withSpace' or "withSpace" means it is string data not empty
     })
-    console.log(requestBody);
+
     let products = await Product.findByIdAndUpdate(req.body._id, requestBody , {useFindAndModify: false } );
     if(!products){
         return (new AppError('can not get the products ' , 500))
@@ -66,12 +66,34 @@ exports.editProducts = catchAsync(async(req,res,next)=>{
 });
 
     exports.getProducts = catchAsync(async(req,res,next)=>{
-        const products = await Product.find()
+        let products ;
+        if(req.body) {
+            console.log(req.body)
+            let variable = req.body;
+            let limit = variable.limit ? parseInt(variable.limit) : 100;
+            let skip = parseInt(variable.skip);
+            let term = variable.searchTerms;
+
+            if (term) {
+            products = await Product.find({ pStock: { $gt: 0 } })
+                    .find({ $text: { $search: term } })   
+                    .sort({pTitle:1}) 
+                    
+            } else {
+            products = await  Product.find({ pStock: { $gt: 0 } })
+                    .sort({pTitle:1})
+                    .skip(skip)
+                    .limit(limit)       
+            }
+        }else{
+            products = await Product.find({ pStock: { $gt: 0 } })
+        }
         console.log(products)
         sendResponce(res,products,200)
     });
+
     exports.getSaleProducts = catchAsync(async(req,res,next)=>{
-        const products = await Product.find({pOnSale : 'onSale'})
+        const products = await Product.find({pStock: { $gt: 0 }}).where('pOnSale').in('onSale')
         if(!products){
             return (new AppError('no product on sale ' , 204))
         }
@@ -82,18 +104,18 @@ exports.editProducts = catchAsync(async(req,res,next)=>{
       
     
         const [cetegory1 , cetegory2] = req.body.cetegory.split(',');
-        console.log(cetegory1 , cetegory2)
+
         const cetegory =[
             cetegory1,
             cetegory2
         ]
-        console.log(cetegory)
+
         if (!cetegory){
             return new AppError('please select cetegory', 400)
         }
-        const products = await Product.find().where('pCetegory').in(cetegory)
+        const products = await Product.find({pStock: { $gt: 0 }}).where('pCetegory').in(cetegory)
         
-        console.log(products)
+      
         if (!products){
             return new AppError(`no product for ${cetegory} cetegory`, 204)
             
@@ -106,8 +128,7 @@ exports.editProducts = catchAsync(async(req,res,next)=>{
             return new AppError('please select cetegory', 400)
         }
         const products = await Product.find().where('_id').in(req.body.id)
-        
-        console.log(products)
+ 
         if (!products){
             return new AppError(`no product found of given id`, 204)
             
@@ -115,4 +136,22 @@ exports.editProducts = catchAsync(async(req,res,next)=>{
         sendResponce(res,products,200)
     })
    
+ exports.editProductsCount = catchAsync(async(req,res,next)=>{
+ 
+   let productIDs= [...req.body.products]
+   console.log(productIDs)
+
+     let products = await Product.find().where('_id').in(productIDs);
+   
+     await products.map(async(product)=>{
+        //  let count = productIDs.filter((item) => item === product._id).length
+        //  console.log(count)
+         count = product.pStock - productIDs.filter((item) => item == product._id).length;
+         console.log(count)
+       return await Product.findByIdAndUpdate(product._id ,{pStock : count}, {useFindAndModify: false })
+     })
+     res.status(200).json({
+         status:'success',
+     })
+ })
 

@@ -42,5 +42,6 @@ router.post('/getSaleProducts', productController.getSaleProducts)
 router.post('/getCetegoryProducts', productController.getCetegoryProducts)
 router.post('/getCartProducts', productController.getCartProducts)
 
+router.post('/editProductsCount',authController.protect , productController.editProductsCount)
 
 module.exports = router;
