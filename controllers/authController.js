@@ -7,7 +7,8 @@ const sendEmail = require('./../utilits/email');
 const passport = require('passport');
 const {promisify} = require('util');
 const nodemailer = require('nodemailer')
-const nodemailMailgun = require('nodemailer-mailgun-transport')
+const nodemailMailgun = require('nodemailer-mailgun-transport');
+const { syncBuiltinESMExports } = require('module');
 
 const signToken = id =>{
     return jwt.sign({id},process.env.JWT_SECRET,{
@@ -105,8 +106,8 @@ exports.forgetPassword = catchAsync(async(req,res,next)=>{
     try{
         const auth={
             auth:{
-                api_key:'d600d5370693176d01c5ef38beb24388-dbdfb8ff-cafb69aa',
-                domain:'sandbox8975ac6953844e2f940695f6010e1a76.mailgun.org'
+                api_key:process.env.MAILGUN_API_KEY,
+                domain:process.env.MAILGUN_DOMAIN
             }
         }
         let transporter= nodemailer.createTransport(nodemailMailgun(auth));
@@ -117,9 +118,12 @@ exports.forgetPassword = catchAsync(async(req,res,next)=>{
             text :message
             
         }
-       transporter.sendMail(mailOptions , function(err ,data){
+       transporter.sendMail(mailOptions , async(err ,data)=>{
                 if(err){
-                    console.log(err)
+                    user.passwordResetToken = undefined;
+                    user.passwordResetExpires = undefined ;
+                    await user.save({validateBeforSave:true});
+                    return next(new AppError('There was an error while sending email. Try again later' , 500))
                 }else{
                     console.log(data)
                     res.status(200).json({
@@ -267,5 +271,9 @@ exports.updateOrdersList = catchAsync(async(req,res,next)=>{
          user
      })
  })
+
+// exports.changePassword = catchAsync(async(req,res,next)=>{
+// const hashedToken
+//  })
 
 
