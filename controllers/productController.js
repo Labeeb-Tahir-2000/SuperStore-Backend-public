@@ -144,8 +144,7 @@ exports.editProducts = catchAsync(async(req,res,next)=>{
      let products = await Product.find().where('_id').in(productIDs);
    
      await products.map(async(product)=>{
-        //  let count = productIDs.filter((item) => item === product._id).length
-        //  console.log(count)
+       
          count = product.pStock - productIDs.filter((item) => item == product._id).length;
          console.log(count)
        return await Product.findByIdAndUpdate(product._id ,{pStock : count}, {useFindAndModify: false })

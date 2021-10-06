@@ -8,7 +8,7 @@ router.post('/signin',authController.signin);
 
 router.post('/forgetPassword',authController.forgetPassword);
 
-// router.post('/changePassword', authController.changePassword);
+router.post('/changePassword', authController.changePassword);
 
 router.get('/signout', authController.protect );
 
