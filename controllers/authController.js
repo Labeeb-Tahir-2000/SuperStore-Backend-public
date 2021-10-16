@@ -245,7 +245,7 @@ exports.setUserOrder = catchAsync(async(req,res,next)=>{
                    -----------------------------------------------------------------------------`
              
          }
-         console.log(user.email)
+
          const mailOptions2={// mail to customer
             from:'onlinegrocerymart.store@gmail.com',
             to:user.email,
@@ -262,26 +262,9 @@ exports.setUserOrder = catchAsync(async(req,res,next)=>{
                    -----------------------------------------------------------------------------`
             
         }
-        transporter.sendMail(mailOptions1,(err,data)=>{
-           if(err){ 
-               return res.status(201).json({
-                 status:'success',
-                 user
-             })
-           }else{
-               console.log(data)
-           }
-       })
-       transporter.sendMail(mailOptions2,(err,data)=>{
-        if(err){ 
-            return res.status(201).json({
-              status:'success',
-              user
-          })
-        }else{
-            console.log(data)
-        }
-    })
+       await transporter.sendMail(mailOptions1)
+       await transporter.sendMail(mailOptions2)
+       
       }catch(err){
           return res.status(201).json({
              status:'success',
@@ -292,7 +275,7 @@ exports.setUserOrder = catchAsync(async(req,res,next)=>{
          status:'success',
          user
      })
-     }
+    }
      
  })
 
@@ -369,6 +352,24 @@ console.log(user)
     
     createSendToken(res,user,200);
 
+ })
+
+ exports.changeEmail= catchAsync(async (req, res, next)=>{
+     const oldEmail = req.body.oldEmail;
+     const newEmail = req.body.newEmail;
+     const password = req.body.password;
+     if( req.user.email === oldEmail ){
+         const user = await User.findOneAndUpdate({email:oldEmail},{email:newEmail},{useFindAndModify: false })
+         if(!user){
+             return next(new AppError('cannot update email!',400))
+         }
+         res.status(200).json({
+             status:'success',
+             user
+         })
+     }else{
+        return next(new AppError('please provide correct email address that you used to login before!',401))
+     }
  })
 
 
